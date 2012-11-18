@@ -70,8 +70,8 @@ void lfwd(int speed=255) {
 	msg_debug.data = debug_str;
 	debug_pub.publish( &msg_debug );
 
-	digitalWrite( P_LFWD, HIGH );
-	digitalWrite( P_LREV, LOW );
+	digitalWrite( P_LFWD, LOW );
+	digitalWrite( P_LREV, HIGH);
 	analogWrite( P_LENA, constrain( 255-speed, 0, 255 ) );
 	ldir = FWD;
 }
@@ -81,8 +81,8 @@ void lrev(int speed=255) {
 	msg_debug.data = debug_str;
 	debug_pub.publish( &msg_debug );
 
-	digitalWrite( P_LFWD, LOW );
-	digitalWrite( P_LREV, HIGH );
+	digitalWrite( P_LFWD, HIGH);
+	digitalWrite( P_LREV, LOW );
 	analogWrite( P_LENA, constrain( 255-speed, 0, 255 ) );
 	ldir = REV;
 }
@@ -114,8 +114,8 @@ void rfwd( int speed=255) {
 	msg_debug.data = debug_str;
 	debug_pub.publish( &msg_debug );
 
-	digitalWrite( P_RFWD, HIGH );
-	digitalWrite( P_RREV, LOW );
+	digitalWrite( P_RFWD, LOW  );
+	digitalWrite( P_RREV, HIGH);
 	analogWrite( P_RENA, constrain( 255-speed, 0, 255 ) );
 	rdir = FWD;
 }
@@ -125,8 +125,8 @@ void rrev(int speed=255) {
 	msg_debug.data = debug_str;
 	debug_pub.publish( &msg_debug );
 
-	digitalWrite( P_RFWD, LOW );
-	digitalWrite( P_RREV, HIGH );
+	digitalWrite( P_RFWD, HIGH);
+	digitalWrite( P_RREV, LOW  );
 	analogWrite( P_RENA, constrain( 255-speed, 0, 255 ) );
 	rdir = REV;
 }
