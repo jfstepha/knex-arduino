@@ -4,6 +4,7 @@
 #include <ros.h>
 #include <std_msgs/String.h>
 #include <std_msgs/Int16.h>
+#include <std_msgs/Float32.h>
 #include <Time.h>
 #include <Servo.h>
 
@@ -11,7 +12,7 @@
 #define P_RREV 4
 #define P_RENA 6
 
-#define P_LFWD A0
+#define P_LFWD 8
 #define P_LREV 7
 #define P_LENA 5
 
@@ -159,9 +160,9 @@ void rbrake() {
 
 
 //////////////////////////////////////////////////////////////////////
-void RMotorCallBack( const std_msgs::Int16& motor_msg) {
+void RMotorCallBack( const std_msgs::Float32& motor_msg) {
 //////////////////////////////////////////////////////////////////////
-	sprintf(debug_str, "LMotorCallback %d", motor_msg.data);
+	sprintf(debug_str, "LMotorCallback %0.3f", motor_msg.data);
 	msg_debug.data = debug_str;
 	debug_pub.publish( &msg_debug );
 
@@ -177,7 +178,7 @@ void RMotorCallBack( const std_msgs::Int16& motor_msg) {
 }
 
 //////////////////////////////////////////////////////////////////////
-void LMotorCallBack( const std_msgs::Int16& motor_msg) {
+void LMotorCallBack( const std_msgs::Float32& motor_msg) {
 //////////////////////////////////////////////////////////////////////
 
     if (motor_msg.data > 255 || motor_msg.data < -255) {
@@ -236,8 +237,8 @@ void Servo5CallBack( const std_msgs::Int16& servo_msg) {
 	servo5.write( constrain( servo_msg.data, 0, 179) );
 }
 
-ros::Subscriber<std_msgs::Int16> rmotor_sub("rmotor_cmd", &RMotorCallBack);
-ros::Subscriber<std_msgs::Int16> lmotor_sub("lmotor_cmd", &LMotorCallBack);
+ros::Subscriber<std_msgs::Float32> rmotor_sub("rmotor_cmd", &RMotorCallBack);
+ros::Subscriber<std_msgs::Float32> lmotor_sub("lmotor_cmd", &LMotorCallBack);
 ros::Subscriber<std_msgs::Int16> servo1_sub("servo1_cmd", &Servo1CallBack);
 ros::Subscriber<std_msgs::Int16> servo2_sub("servo2_cmd", &Servo2CallBack);
 ros::Subscriber<std_msgs::Int16> servo3_sub("servo3_cmd", &Servo3CallBack);
