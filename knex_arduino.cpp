@@ -1,5 +1,4 @@
 // Do not remove the include below
-//
 #include "knex_arduino.h"
 #include <ros.h>
 #include <std_msgs/String.h>
