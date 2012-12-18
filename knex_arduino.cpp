@@ -261,9 +261,9 @@ void LMotorCallBack( const std_msgs::Float32& motor_msg) {
     	lcoast();
 #ifdef INVERT_LWHEEL
     } else if (motor_msg.data < 0) {
-    	lfwd(motor_msg.data);
+    	lfwd(abs(motor_msg.data));
     } else {
-    	lrev(abs(motor_msg.data));
+    	lrev(motor_msg.data);
     }
 #else
     } else if (motor_msg.data < 0) {
