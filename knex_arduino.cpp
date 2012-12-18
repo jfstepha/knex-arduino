@@ -8,34 +8,35 @@
 #include <Time.h>
 #include <Servo.h>
 
-#define P_LFWD 8
-#define P_LREV 11
-#define P_LENA 9
+#define P_RFWD A2
+#define P_RREV 4
+#define P_RENA 6
 
-#define P_RFWD 12
-#define P_RREV 13
-#define P_RENA 10
+#define P_LFWD 8
+#define P_LREV 7
+#define P_LENA 5
+
 
 // EN_BAR: is the enable pin active low or active high?
 //   EN_BAR 0 = pin is active high
 //   EN_BAR 1 = pin is active low
 //       (drive the pin low to make the motor spin)
 
-#define EN_BAR 0
+#define EN_BAR 1
 
 // define these to true to invert the direction of rotation of the wheel
-#undef INVERT_LWHEEL
-#undef INVERT_RWHEEL
+#define INVERT_LWHEEL
+#define INVERT_RWHEEL
 
 // define this flag to true to use servos
-#undef SERVOS
+#define SERVOS
 
 #ifdef SERVOS
 
-#define SERVO1 4
-#define SERVO2 5
-#define SERVO3 7
-#define SERVO4 10
+#define SERVO1 10
+#define SERVO2 11
+#define SERVO3 12
+#define SERVO4 13
 #define SERVO5 14
 
 #endif
@@ -44,15 +45,18 @@
 // interrupt 0 = pin 2
 // interrupt 1 = pin 3
 #define LWHEEL_A_INT 0
-#define LWHEEL_B 4
+#define LWHEEL_B 9
 
 #define RWHEEL_A_INT 1
-#define RWHEEL_B 5
+#define RWHEEL_B 9
+
+#define LWHEEL 2
+#define RWHEEL 3
 
 // define TWO_PHASE if the wheel encoder has two phases (ie an A and B pin).
 // undef TWO_PHASE if there is only one signal to the wheel encoder (use the driven direction)
 
-#define TWO_PHASE
+#undef TWO_PHASE
 
 #define LOOP_DLY 5  // in msec
 
@@ -417,11 +421,11 @@ void setup()
 
 	  pinMode( RANGE, INPUT );
 
-	  pinMode(LWHEEL_B, INPUT);
-	  pinMode(RWHEEL_B, INPUT);
+//	  pinMode(LWHEEL_B, INPUT);
+//	  pinMode(RWHEEL_B, INPUT);
 
-	  attachInterrupt(LWHEEL_A_INT, doLEncoder, RISING);   //init the interrupt mode
-	  attachInterrupt(RWHEEL_A_INT, doREncoder, RISING);
+//	  attachInterrupt(LWHEEL_A_INT, doLEncoder, RISING);   //init the interrupt mode
+//	  attachInterrupt(RWHEEL_A_INT, doREncoder, RISING);
 
 }
 
@@ -445,14 +449,14 @@ void loop()
 
 	// try without interrupts
 
-//    if (rprev != digitalRead(RWHEEL)) {
-//    	rcoder += rdir;
-//    	rprev = digitalRead(RWHEEL);
-//    }
-//    if (lprev != digitalRead(LWHEEL)){
-//    	lcoder += ldir;
-//    	lprev = digitalRead(LWHEEL);
-//    }
+    if (rprev != digitalRead(RWHEEL)) {
+    	rcoder += rdir;
+    	rprev = digitalRead(RWHEEL);
+    }
+    if (lprev != digitalRead(LWHEEL)){
+    	lcoder += ldir;
+    	lprev = digitalRead(LWHEEL);
+    }
 	msg_lwheel.data = lcoder;
 	msg_rwheel.data = rcoder;
 	msg_range.data = analogRead( RANGE );
