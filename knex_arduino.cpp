@@ -265,7 +265,7 @@ void LMotorCallBack( const std_msgs::Float32& motor_msg) {
     	lcoast();
 #ifdef INVERT_LWHEEL
     } else if (motor_msg.data < 0) {
-    	lfwd(motor_msg.data);
+    	lfwd(abs(motor_msg.data));
     } else {
     	lrev(abs(motor_msg.data));
     }
@@ -421,11 +421,11 @@ void setup()
 
 	  pinMode( RANGE, INPUT );
 
-//	  pinMode(LWHEEL_B, INPUT);
-//	  pinMode(RWHEEL_B, INPUT);
+	  pinMode(LWHEEL_B, INPUT);
+	  pinMode(RWHEEL_B, INPUT);
 
-//	  attachInterrupt(LWHEEL_A_INT, doLEncoder, RISING);   //init the interrupt mode
-//	  attachInterrupt(RWHEEL_A_INT, doREncoder, RISING);
+	  attachInterrupt(LWHEEL_A_INT, doLEncoder, RISING);   //init the interrupt mode
+	  attachInterrupt(RWHEEL_A_INT, doREncoder, RISING);
 
 }
 
@@ -449,16 +449,17 @@ void loop()
 
 	// try without interrupts
 
-    if (rprev != digitalRead(RWHEEL)) {
-    	rcoder += rdir;
-    	rprev = digitalRead(RWHEEL);
-    }
-    if (lprev != digitalRead(LWHEEL)){
-    	lcoder += ldir;
-    	lprev = digitalRead(LWHEEL);
-    }
-	msg_lwheel.data = lcoder;
-	msg_rwheel.data = rcoder;
+//    if (rprev != digitalRead(RWHEEL)) {
+//    	rcoder += rdir;
+//    	rprev = digitalRead(RWHEEL);
+//    }
+//    if (lprev != digitalRead(LWHEEL)){
+//    	lcoder += ldir;
+//    	lprev = digitalRead(LWHEEL);
+//    }
+//	msg_lwheel.data = lcoder;
+//	msg_rwheel.data = rcoder;
+
 	msg_range.data = analogRead( RANGE );
 	msg_scope.data = analogRead( SCOPE );
 	lwheel_pub.publish( &msg_lwheel );
