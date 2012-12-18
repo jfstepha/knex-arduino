@@ -25,8 +25,8 @@
 #define EN_BAR 1
 
 // define these to true to invert the direction of rotation of the wheel
-#define INVERT_LWHEEL
-#define INVERT_RWHEEL
+#undef INVERT_LWHEEL
+#undef INVERT_RWHEEL
 
 // define this flag to true to use servos
 #define SERVOS
@@ -115,7 +115,12 @@ void lfwd(int speed=255) {
 	} else {
 		analogWrite( P_LENA, constrain(speed, 0, 255 ) );
 	}
+#ifdef INVERT_LWHEEL
+	ldir = REV;
+#else
 	ldir = FWD;
+#endif
+
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -132,7 +137,11 @@ void lrev(int speed=255) {
 	} else {
 		analogWrite( P_LENA, constrain(speed, 0, 255 ) );
 	}
+#ifdef INVERT_LWHEEL
+	ldir = FWD;
+#else
 	ldir = REV;
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -175,7 +184,11 @@ void rfwd( int speed=255) {
 	} else {
 		analogWrite( P_RENA, constrain(speed, 0, 255 ) );
 	}
+#ifdef INVERT_RWHEEL
+	rdir = REV;
+#else
 	rdir = FWD;
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -192,7 +205,11 @@ void rrev(int speed=255) {
 	} else {
 		analogWrite( P_RENA, constrain(speed, 0, 255 ) );
 	}
+#ifdef INVERT_RWHEEL
+	rdir = FWD;
+#else
 	rdir = REV;
+#endif
 }
 
 
