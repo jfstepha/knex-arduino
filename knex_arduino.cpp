@@ -40,10 +40,19 @@
 
 #endif
 
-#define LWHEEL_A 2
+// the A's are connected to interrupts, while the B's are just read with digital_reads
+// interrupt 0 = pin 2
+// interrupt 1 = pin 3
+#define LWHEEL_A_INT 0
 #define LWHEEL_B 4
-#define RWHEEL_A 3
+
+#define RWHEEL_A_INT 1
 #define RWHEEL_B 5
+
+// define TWO_PHASE if the wheel encoder has two phases (ie an A and B pin).
+// undef TWO_PHASE if there is only one signal to the wheel encoder (use the driven direction)
+
+#define TWO_PHASE
 
 #define LOOP_DLY 5  // in msec
 
@@ -88,7 +97,9 @@ int ticks_since_beat = 0;
 
 //The setup function is called once at startup of the sketch
 
+//////////////////////////////////////////////////////////////////////
 void lfwd(int speed=255) {
+//////////////////////////////////////////////////////////////////////
 	sprintf(debug_str, "lfwd %d", speed);
 	msg_debug.data = debug_str;
 	debug_pub.publish( &msg_debug );
@@ -103,7 +114,9 @@ void lfwd(int speed=255) {
 	ldir = FWD;
 }
 
+//////////////////////////////////////////////////////////////////////
 void lrev(int speed=255) {
+//////////////////////////////////////////////////////////////////////
 	sprintf(debug_str, "lrev %d", speed);
 	msg_debug.data = debug_str;
 	debug_pub.publish( &msg_debug );
@@ -118,7 +131,9 @@ void lrev(int speed=255) {
 	ldir = REV;
 }
 
+//////////////////////////////////////////////////////////////////////
 void lcoast() {
+//////////////////////////////////////////////////////////////////////
 	sprintf(debug_str, "lcoast");
 	msg_debug.data = debug_str;
 	debug_pub.publish( &msg_debug );
@@ -129,7 +144,9 @@ void lcoast() {
 	ldir=0;
 }
 
+//////////////////////////////////////////////////////////////////////
 void lbrake() {
+//////////////////////////////////////////////////////////////////////
 	sprintf(debug_str, "lbrake");
 	msg_debug.data = debug_str;
 	debug_pub.publish( &msg_debug );
@@ -140,7 +157,9 @@ void lbrake() {
 	ldir = 0;
 }
 
+//////////////////////////////////////////////////////////////////////
 void rfwd( int speed=255) {
+//////////////////////////////////////////////////////////////////////
 	sprintf(debug_str, "rfwd %d", speed);
 	msg_debug.data = debug_str;
 	debug_pub.publish( &msg_debug );
@@ -155,7 +174,9 @@ void rfwd( int speed=255) {
 	rdir = FWD;
 }
 
+//////////////////////////////////////////////////////////////////////
 void rrev(int speed=255) {
+//////////////////////////////////////////////////////////////////////
 	sprintf(debug_str, "rrev %d", speed);
 	msg_debug.data = debug_str;
 	debug_pub.publish( &msg_debug );
@@ -171,7 +192,9 @@ void rrev(int speed=255) {
 }
 
 
+//////////////////////////////////////////////////////////////////////
 void rcoast() {
+//////////////////////////////////////////////////////////////////////
 	sprintf(debug_str, "rcoast");
 	msg_debug.data = debug_str;
 	debug_pub.publish( &msg_debug );
@@ -182,7 +205,9 @@ void rcoast() {
 	rdir = 0;
 }
 
+//////////////////////////////////////////////////////////////////////
 void rbrake() {
+//////////////////////////////////////////////////////////////////////
 	sprintf(debug_str, "rbrake");
 	msg_debug.data = debug_str;
 	debug_pub.publish( &msg_debug );
@@ -192,8 +217,11 @@ void rbrake() {
 	digitalWrite( P_RENA, LOW);
 	rdir = 0;
 }
+
+//////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 // callbacks
+//////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 
 
@@ -305,25 +333,44 @@ ros::Subscriber<std_msgs::Int16> servo4_sub("servo4_cmd", &Servo4CallBack);
 ros::Subscriber<std_msgs::Int16> servo5_sub("servo5_cmd", &Servo5CallBack);
 #endif
 
+//////////////////////////////////////////////////////////////////////
 void doLEncoder(){
+//////////////////////////////////////////////////////////////////////
+	// note that you could get 4x the resolution by catching rising and fallling edges of A and B.
+#ifdef TWO_PHASE
 	if (digitalRead(LWHEEL_B)) {
 		lcoder += 1;
 	} else {
 		lcoder -= 1;
 	}
-// lcoder += ldir;
+#else
+   lcoder += ldir;
+#endif
+
 }
 
+//////////////////////////////////////////////////////////////////////
 void doREncoder(){
+//////////////////////////////////////////////////////////////////////
+#ifdef TWO_PHASE
 	if (digitalRead(RWHEEL_B)){
 		rcoder += 1;
 	} else {
 		rcoder -= 1;
 	}
-// rcoder += rdir;
+#else
+    rcoder += rdir;
+#endif
 }
 
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////
 void setup()
+//////////////////////////////////////////////////////////////////////
 {
 	nh.initNode();
 	nh.advertise(debug_pub);
@@ -356,11 +403,6 @@ void setup()
 	  pinMode(P_RREV, OUTPUT);
 	  pinMode(P_RENA, OUTPUT);
 
-	  pinMode( RANGE, INPUT );
-
-	  pinMode(LWHEEL_B, INPUT);
-	  pinMode(RWHEEL_B, INPUT);
-
 
 	  //
 	  // FWD REV ENA
@@ -371,17 +413,24 @@ void setup()
 	  // L   H   L    reverse
 	  // L   H   H    coast (for pwm)
 	  // H   H   L    brake`
-//	  interrupts();
-	  attachInterrupt(0, doLEncoder, RISING);    //init the interrupt mode for the digital pin 2
-	  attachInterrupt(1, doREncoder, RISING);   //init the interrupt mode for the digital pin 3
+
+
+	  pinMode( RANGE, INPUT );
+
+	  pinMode(LWHEEL_B, INPUT);
+	  pinMode(RWHEEL_B, INPUT);
+
+	  attachInterrupt(LWHEEL_A_INT, doLEncoder, RISING);   //init the interrupt mode
+	  attachInterrupt(RWHEEL_A_INT, doREncoder, RISING);
 
 }
 
 
-
-
-// The loop function is called in an endless loop
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 void loop()
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 {
 	nh.spinOnce();
 	ticks_since_beat++;
@@ -415,7 +464,6 @@ void loop()
 
 
 	nh.spinOnce();
-
 
     delay(LOOP_DLY);
 }
