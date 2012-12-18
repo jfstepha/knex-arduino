@@ -457,9 +457,8 @@ void loop()
 //    	lcoder += ldir;
 //    	lprev = digitalRead(LWHEEL);
 //    }
-//	msg_lwheel.data = lcoder;
-//	msg_rwheel.data = rcoder;
-
+	msg_lwheel.data = lcoder;
+	msg_rwheel.data = rcoder;
 	msg_range.data = analogRead( RANGE );
 	msg_scope.data = analogRead( SCOPE );
 	lwheel_pub.publish( &msg_lwheel );
