@@ -111,7 +111,12 @@ void lfwd(int speed=255) {
 	} else {
 		analogWrite( P_LENA, constrain(speed, 0, 255 ) );
 	}
+#ifdef INVERT_LWHEEL
+	ldir = REV;
+#else
 	ldir = FWD;
+#endif
+
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -128,7 +133,11 @@ void lrev(int speed=255) {
 	} else {
 		analogWrite( P_LENA, constrain(speed, 0, 255 ) );
 	}
+#ifdef INVERT_LWHEEL
+	ldir = FWD;
+#else
 	ldir = REV;
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -171,7 +180,11 @@ void rfwd( int speed=255) {
 	} else {
 		analogWrite( P_RENA, constrain(speed, 0, 255 ) );
 	}
+#ifdef INVERT_RWHEEL
+	rdir = REV;
+#else
 	rdir = FWD;
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -188,7 +201,11 @@ void rrev(int speed=255) {
 	} else {
 		analogWrite( P_RENA, constrain(speed, 0, 255 ) );
 	}
+#ifdef INVERT_RWHEEL
+	rdir = FWD;
+#else
 	rdir = REV;
+#endif
 }
 
 
