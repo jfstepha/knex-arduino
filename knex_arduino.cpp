@@ -8,25 +8,27 @@
 #include <Time.h>
 #include <Servo.h>
 
-#define P_RFWD 8
-#define P_RREV 11
-#define P_RENA 9
+#define P_LFWD 8
+#define P_LREV 11
+#define P_LENA 9
 
-#define P_LFWD 12
-#define P_LREV 13
-#define P_LENA 10
+#define P_RFWD 12
+#define P_RREV 13
+#define P_RENA 10
 
-// EN_BAR = true means enable is active low
-//   (drive the pin low to make the motor spin)
+// EN_BAR: is the enable pin active low or active high?
+//   EN_BAR 0 = pin is active high
+//   EN_BAR 1 = pin is active low
+//       (drive the pin low to make the motor spin)
 
-#define EN_BAR false
+#define EN_BAR 0
 
-// set these to true to invert the direction of rotation of the wheel
-#define INVERT_LWHEEL false
-#define INVERT_RWHEEL false
+// define these to true to invert the direction of rotation of the wheel
+#undef INVERT_LWHEEL
+#undef INVERT_RWHEEL
 
-// set this flag to true to use servos
-#define SERVOS false
+// define this flag to true to use servos
+#undef SERVOS
 
 #ifdef SERVOS
 
@@ -206,11 +208,19 @@ void RMotorCallBack( const std_msgs::Float32& motor_msg) {
     	rbrake();
     } else if (motor_msg.data == 0) {
     	rcoast();
+#ifdef INVERT_RWHEEL
+    } else if (motor_msg.data < 0) {
+    	rfwd(abs(motor_msg.data));
+    } else {
+    	rrev(motor_msg.data);
+    }
+#else
     } else if (motor_msg.data < 0) {
     	rrev(abs(motor_msg.data));
     } else {
     	rfwd(motor_msg.data);
     }
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////
