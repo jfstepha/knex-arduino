@@ -8,22 +8,40 @@
 #include <Time.h>
 #include <Servo.h>
 
-#define P_RFWD A2
-#define P_RREV 4
-#define P_RENA 6
+#define P_RFWD 8
+#define P_RREV 11
+#define P_RENA 9
 
-#define P_LFWD 8
-#define P_LREV 7
-#define P_LENA 5
+#define P_LFWD 12
+#define P_LREV 13
+#define P_LENA 10
 
-#define SERVO1 10
-#define SERVO2 11
-#define SERVO3 12
-#define SERVO4 13
+// EN_BAR = true means enable is active low
+//   (drive the pin low to make the motor spin)
+
+#define EN_BAR false
+
+// set these to true to invert the direction of rotation of the wheel
+#define INVERT_LWHEEL false
+#define INVERT_RWHEEL false
+
+// set this flag to true to use servos
+#define SERVOS false
+
+#ifdef SERVOS
+
+#define SERVO1 4
+#define SERVO2 5
+#define SERVO3 7
+#define SERVO4 10
 #define SERVO5 14
 
-#define LWHEEL 2
-#define RWHEEL 3
+#endif
+
+#define LWHEEL_A 2
+#define LWHEEL_B 4
+#define RWHEEL_A 3
+#define RWHEEL_B 5
 
 #define LOOP_DLY 5  // in msec
 
@@ -33,11 +51,13 @@
 #define RANGE A5
 #define SCOPE A4
 
+#ifdef SERVOS
 Servo servo1;
 Servo servo2;
 Servo servo3;
 Servo servo4;
 Servo servo5;
+#endif
 
 int lcoder = 0;
 int rcoder = 0;
@@ -73,7 +93,11 @@ void lfwd(int speed=255) {
 
 	digitalWrite( P_LFWD, LOW );
 	digitalWrite( P_LREV, HIGH);
-	analogWrite( P_LENA, constrain( 255-speed, 0, 255 ) );
+	if (EN_BAR) {
+		analogWrite( P_LENA, constrain( 255-speed, 0, 255 ) );
+	} else {
+		analogWrite( P_LENA, constrain(speed, 0, 255 ) );
+	}
 	ldir = FWD;
 }
 
@@ -84,7 +108,11 @@ void lrev(int speed=255) {
 
 	digitalWrite( P_LFWD, HIGH);
 	digitalWrite( P_LREV, LOW );
-	analogWrite( P_LENA, constrain( 255-speed, 0, 255 ) );
+	if (EN_BAR) {
+		analogWrite( P_LENA, constrain( 255-speed, 0, 255 ) );
+	} else {
+		analogWrite( P_LENA, constrain(speed, 0, 255 ) );
+	}
 	ldir = REV;
 }
 
@@ -117,7 +145,11 @@ void rfwd( int speed=255) {
 
 	digitalWrite( P_RFWD, LOW  );
 	digitalWrite( P_RREV, HIGH);
-	analogWrite( P_RENA, constrain( 255-speed, 0, 255 ) );
+	if (EN_BAR) {
+		analogWrite( P_RENA, constrain( 255-speed, 0, 255 ) );
+	} else {
+		analogWrite( P_RENA, constrain(speed, 0, 255 ) );
+	}
 	rdir = FWD;
 }
 
@@ -128,7 +160,11 @@ void rrev(int speed=255) {
 
 	digitalWrite( P_RFWD, HIGH);
 	digitalWrite( P_RREV, LOW  );
-	analogWrite( P_RENA, constrain( 255-speed, 0, 255 ) );
+	if (EN_BAR) {
+		analogWrite( P_RENA, constrain( 255-speed, 0, 255 ) );
+	} else {
+		analogWrite( P_RENA, constrain(speed, 0, 255 ) );
+	}
 	rdir = REV;
 }
 
@@ -185,66 +221,97 @@ void LMotorCallBack( const std_msgs::Float32& motor_msg) {
     	lbrake();
     } else if (motor_msg.data == 0) {
     	lcoast();
+#ifdef INVERT_LWHEEL
+    } else if (motor_msg.data < 0) {
+    	lfwd(motor_msg.data);
+    } else {
+    	lrev(abs(motor_msg.data));
+    }
+#else
     } else if (motor_msg.data < 0) {
     	lrev(abs(motor_msg.data));
     } else {
     	lfwd(motor_msg.data);
     }
+#endif
 }
-////////////////////////////////////////////////////////////////////////
+
+#ifdef SERVOS
+//////////////////////////////////////////////////////////////////////////
 void Servo1CallBack( const std_msgs::Int16& servo_msg) {
-////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 	sprintf(debug_str, "servo1 %d", servo_msg.data);
 	msg_debug.data = debug_str;
 	debug_pub.publish( &msg_debug );
 
 	servo1.write( constrain( servo_msg.data, 0, 179) );
 }
-////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 void Servo2CallBack( const std_msgs::Int16& servo_msg) {
-////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 	sprintf(debug_str, "servo2 %d", servo_msg.data);
 	msg_debug.data = debug_str;
 	debug_pub.publish( &msg_debug );
 
 	servo2.write( constrain( servo_msg.data, 0, 179) );
 }
-//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 void Servo3CallBack( const std_msgs::Int16& servo_msg) {
-//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 	sprintf(debug_str, "servo3 %d", servo_msg.data);
 	msg_debug.data = debug_str;
 	debug_pub.publish( &msg_debug );
 
 	servo3.write( constrain( servo_msg.data, 0, 179) );
 }
-//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 void Servo4CallBack( const std_msgs::Int16& servo_msg) {
-//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 	sprintf(debug_str, "servo4 %d", servo_msg.data);
 	msg_debug.data = debug_str;
 	debug_pub.publish( &msg_debug );
 
 	servo4.write( constrain( servo_msg.data, 0, 179) );
 }
-//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 void Servo5CallBack( const std_msgs::Int16& servo_msg) {
-//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 	sprintf(debug_str, "servo5 %d", servo_msg.data);
 	msg_debug.data = debug_str;
 	debug_pub.publish( &msg_debug );
 
 	servo5.write( constrain( servo_msg.data, 0, 179) );
 }
+#endif
 
 ros::Subscriber<std_msgs::Float32> rmotor_sub("rmotor_cmd", &RMotorCallBack);
 ros::Subscriber<std_msgs::Float32> lmotor_sub("lmotor_cmd", &LMotorCallBack);
+
+#ifdef SERVOS
 ros::Subscriber<std_msgs::Int16> servo1_sub("servo1_cmd", &Servo1CallBack);
 ros::Subscriber<std_msgs::Int16> servo2_sub("servo2_cmd", &Servo2CallBack);
 ros::Subscriber<std_msgs::Int16> servo3_sub("servo3_cmd", &Servo3CallBack);
 ros::Subscriber<std_msgs::Int16> servo4_sub("servo4_cmd", &Servo4CallBack);
 ros::Subscriber<std_msgs::Int16> servo5_sub("servo5_cmd", &Servo5CallBack);
+#endif
 
+void doLEncoder(){
+	if (digitalRead(LWHEEL_B)) {
+		lcoder += 1;
+	} else {
+		lcoder -= 1;
+	}
+// lcoder += ldir;
+}
+
+void doREncoder(){
+	if (digitalRead(RWHEEL_B)){
+		rcoder += 1;
+	} else {
+		rcoder -= 1;
+	}
+// rcoder += rdir;
+}
 
 void setup()
 {
@@ -257,6 +324,7 @@ void setup()
 	nh.subscribe(rmotor_sub);
 	nh.subscribe(lmotor_sub);
 
+#ifdef SERVOS
 	nh.subscribe(servo1_sub);
 	nh.subscribe(servo2_sub);
 	nh.subscribe(servo3_sub);
@@ -268,6 +336,7 @@ void setup()
 	servo3.attach(SERVO3);
 	servo4.attach(SERVO4);
 	servo5.attach(SERVO5);
+#endif
 
 	  pinMode(P_LFWD, OUTPUT);
 	  pinMode(P_LREV, OUTPUT);
@@ -279,6 +348,10 @@ void setup()
 
 	  pinMode( RANGE, INPUT );
 
+	  pinMode(LWHEEL_B, INPUT);
+	  pinMode(RWHEEL_B, INPUT);
+
+
 	  //
 	  // FWD REV ENA
 	  // L   L   L    coast
@@ -289,10 +362,11 @@ void setup()
 	  // L   H   H    coast (for pwm)
 	  // H   H   L    brake`
 //	  interrupts();
-//	  attachInterrupt(LWHEEL, LwheelSpeed, CHANGE);    //init the interrupt mode for the digital pin 2
-//	  attachInterrupt(RWHEEL, RwheelSpeed, CHANGE);   //init the interrupt mode for the digital pin 3
+	  attachInterrupt(0, doLEncoder, RISING);    //init the interrupt mode for the digital pin 2
+	  attachInterrupt(1, doREncoder, RISING);   //init the interrupt mode for the digital pin 3
 
 }
+
 
 
 
@@ -312,14 +386,14 @@ void loop()
 
 	// try without interrupts
 
-    if (rprev != digitalRead(RWHEEL)) {
-    	rcoder += rdir;
-    	rprev = digitalRead(RWHEEL);
-    }
-    if (lprev != digitalRead(LWHEEL)){
-    	lcoder += ldir;
-    	lprev = digitalRead(LWHEEL);
-    }
+//    if (rprev != digitalRead(RWHEEL)) {
+//    	rcoder += rdir;
+//    	rprev = digitalRead(RWHEEL);
+//    }
+//    if (lprev != digitalRead(LWHEEL)){
+//    	lcoder += ldir;
+//    	lprev = digitalRead(LWHEEL);
+//    }
 	msg_lwheel.data = lcoder;
 	msg_rwheel.data = rcoder;
 	msg_range.data = analogRead( RANGE );
