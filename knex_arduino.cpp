@@ -7,13 +7,13 @@
 #include <Time.h>
 #include <Servo.h>
 
-#define P_LFWD 8
-#define P_LREV 11
-#define P_LENA 9
+#define P_RFWD 8
+#define P_RREV 11
+#define P_RENA 9
 
-#define P_RFWD 12
-#define P_RREV 13
-#define P_RENA 10
+#define P_LFWD 12
+#define P_LREV 13
+#define P_LENA 10
 
 // EN_BAR: is the enable pin active low or active high?
 //   EN_BAR 0 = pin is active high
@@ -42,24 +42,27 @@
 // the A's are connected to interrupts, while the B's are just read with digital_reads
 // interrupt 0 = pin 2
 // interrupt 1 = pin 3
-#define LWHEEL_A_INT 0
-#define LWHEEL_B 4
+#define RWHEEL_A_INT 0
+#define RWHEEL_B 4
 
-#define RWHEEL_A_INT 1
-#define RWHEEL_B 5
+#define LWHEEL_A_INT 1
+#define LWHEEL_B 5
 
 // define TWO_PHASE if the wheel encoder has two phases (ie an A and B pin).
 // undef TWO_PHASE if there is only one signal to the wheel encoder (use the driven direction)
 
 #define TWO_PHASE
 
-#define LOOP_DLY 5  // in msec
+#define LOOP_DLY 10  // in msec
 
 #define FWD 1
 #define REV -1
 
-#define RANGE A5
-#define SCOPE A4
+#define RANGE0 A2
+#define RANGE1 A3
+#define RANGE2 A4
+#define SCOPE A5
+#define BAT A1
 
 #ifdef SERVOS
 Servo servo1;
@@ -82,16 +85,28 @@ std_msgs::String msg_debug;
 ros::Publisher debug_pub("arduino_debug", &msg_debug);
 std_msgs::Int16 msg_lwheel;
 std_msgs::Int16 msg_rwheel;
-std_msgs::Int16 msg_range;
+std_msgs::Int16 msg_range0;
+std_msgs::Int16 msg_range1;
+std_msgs::Int16 msg_range2;
 std_msgs::Int16 msg_scope;
+std_msgs::Int16 msg_bat;
 ros::Publisher lwheel_pub("lwheel", &msg_lwheel);
 ros::Publisher rwheel_pub("rwheel", &msg_rwheel);
-ros::Publisher range_pub("range", &msg_range);
+ros::Publisher range0_pub("range0", &msg_range0);
+ros::Publisher range1_pub("range1", &msg_range1);
+ros::Publisher range2_pub("range2", &msg_range2);
 ros::Publisher scope_pub("scope", &msg_scope);
+ros::Publisher bat_pub("battery", &msg_bat);
 
 char debug_str[80] = "blank";
 int tick_no = 0;
 int ticks_since_beat = 0;
+int ticks_since_msg = 0;
+
+//#define PRINTDEBUG_STR(X)  sprintf(debug_str,X); msg_debug.data = debug_str; debug_pub.publish( &msg_debug)
+//#define PRINTDEBUG_INT(X, Y)  sprintf(debug_str, X, Y); msg_debug.data = debug_str; debug_pub.publish( &msg_debug)
+#define PRINTDEBUG_STR(X)
+#define PRINTDEBUG_INT(X,Y)
 
 
 //The setup function is called once at startup of the sketch
@@ -99,9 +114,10 @@ int ticks_since_beat = 0;
 //////////////////////////////////////////////////////////////////////
 void lfwd(int speed=255) {
 //////////////////////////////////////////////////////////////////////
-	sprintf(debug_str, "lfwd %d", speed);
-	msg_debug.data = debug_str;
-	debug_pub.publish( &msg_debug );
+	PRINTDEBUG_INT("lfwd %d", speed);
+//	sprintf(debug_str, "lfwd %d", speed);
+//	msg_debug.data = debug_str;
+//	debug_pub.publish( &msg_debug );
 
 	digitalWrite( P_LFWD, LOW );
 	digitalWrite( P_LREV, HIGH);
@@ -121,9 +137,10 @@ void lfwd(int speed=255) {
 //////////////////////////////////////////////////////////////////////
 void lrev(int speed=255) {
 //////////////////////////////////////////////////////////////////////
-	sprintf(debug_str, "lrev %d", speed);
-	msg_debug.data = debug_str;
-	debug_pub.publish( &msg_debug );
+	PRINTDEBUG_INT("lrev %d", speed);
+//	sprintf(debug_str, "lrev %d", speed);
+//	msg_debug.data = debug_str;
+//	debug_pub.publish( &msg_debug );
 
 	digitalWrite( P_LFWD, HIGH);
 	digitalWrite( P_LREV, LOW );
@@ -142,9 +159,10 @@ void lrev(int speed=255) {
 //////////////////////////////////////////////////////////////////////
 void lcoast() {
 //////////////////////////////////////////////////////////////////////
-	sprintf(debug_str, "lcoast");
-	msg_debug.data = debug_str;
-	debug_pub.publish( &msg_debug );
+	PRINTDEBUG_STR("lcoast");
+//	sprintf(debug_str, "lcoast");
+//	msg_debug.data = debug_str;
+//	debug_pub.publish( &msg_debug );
 
 	digitalWrite( P_LFWD, LOW );
 	digitalWrite( P_LREV, LOW );
@@ -155,9 +173,10 @@ void lcoast() {
 //////////////////////////////////////////////////////////////////////
 void lbrake() {
 //////////////////////////////////////////////////////////////////////
-	sprintf(debug_str, "lbrake");
-	msg_debug.data = debug_str;
-	debug_pub.publish( &msg_debug );
+	PRINTDEBUG_STR("lbrake");
+//	sprintf(debug_str, "lbrake");
+//	msg_debug.data = debug_str;
+//	debug_pub.publish( &msg_debug );
 
 	digitalWrite( P_LFWD, HIGH );
 	digitalWrite( P_LREV, HIGH );
@@ -168,9 +187,9 @@ void lbrake() {
 //////////////////////////////////////////////////////////////////////
 void rfwd( int speed=255) {
 //////////////////////////////////////////////////////////////////////
-	sprintf(debug_str, "rfwd %d", speed);
-	msg_debug.data = debug_str;
-	debug_pub.publish( &msg_debug );
+	PRINTDEBUG_INT("rfwd %d", speed);
+//	msg_debug.data = debug_str;
+//	debug_pub.publish( &msg_debug );
 
 	digitalWrite( P_RFWD, LOW  );
 	digitalWrite( P_RREV, HIGH);
@@ -189,9 +208,10 @@ void rfwd( int speed=255) {
 //////////////////////////////////////////////////////////////////////
 void rrev(int speed=255) {
 //////////////////////////////////////////////////////////////////////
-	sprintf(debug_str, "rrev %d", speed);
-	msg_debug.data = debug_str;
-	debug_pub.publish( &msg_debug );
+	PRINTDEBUG_INT("rrev %d", speed);
+//	sprintf(debug_str, "rrev %d", speed);
+//	msg_debug.data = debug_str;
+//	debug_pub.publish( &msg_debug );
 
 	digitalWrite( P_RFWD, HIGH);
 	digitalWrite( P_RREV, LOW  );
@@ -211,9 +231,10 @@ void rrev(int speed=255) {
 //////////////////////////////////////////////////////////////////////
 void rcoast() {
 //////////////////////////////////////////////////////////////////////
-	sprintf(debug_str, "rcoast");
-	msg_debug.data = debug_str;
-	debug_pub.publish( &msg_debug );
+	PRINTDEBUG_STR("rcoast");
+//	sprintf(debug_str, "rcoast");
+//	msg_debug.data = debug_str;
+//	debug_pub.publish( &msg_debug );
 
 	digitalWrite( P_RFWD, LOW );
 	digitalWrite( P_RREV, LOW );
@@ -224,9 +245,9 @@ void rcoast() {
 //////////////////////////////////////////////////////////////////////
 void rbrake() {
 //////////////////////////////////////////////////////////////////////
-	sprintf(debug_str, "rbrake");
-	msg_debug.data = debug_str;
-	debug_pub.publish( &msg_debug );
+	PRINTDEBUG_STR("rbrake");
+//	msg_debug.data = debug_str;
+//	debug_pub.publish( &msg_debug );
 
 	digitalWrite( P_RFWD, HIGH );
 	digitalWrite( P_RREV, HIGH );
@@ -244,9 +265,11 @@ void rbrake() {
 //////////////////////////////////////////////////////////////////////
 void RMotorCallBack( const std_msgs::Float32& motor_msg) {
 //////////////////////////////////////////////////////////////////////
-	sprintf(debug_str, "LMotorCallback %0.3f", motor_msg.data);
-	msg_debug.data = debug_str;
-	debug_pub.publish( &msg_debug );
+	PRINTDEBUG_INT("LMotorCallback %0.3f", motor_msg.data);
+//	sprintf(debug_str, "LMotorCallback %0.3f", motor_msg.data);
+//	msg_debug.data = debug_str;
+//	debug_pub.publish( &msg_debug );
+	ticks_since_msg=0;
 
     if (motor_msg.data > 255 || motor_msg.data < -255) {
     	rbrake();
@@ -270,6 +293,7 @@ void RMotorCallBack( const std_msgs::Float32& motor_msg) {
 //////////////////////////////////////////////////////////////////////
 void LMotorCallBack( const std_msgs::Float32& motor_msg) {
 //////////////////////////////////////////////////////////////////////
+	ticks_since_msg=0;
 
     if (motor_msg.data > 255 || motor_msg.data < -255) {
     	lbrake();
@@ -294,45 +318,50 @@ void LMotorCallBack( const std_msgs::Float32& motor_msg) {
 //////////////////////////////////////////////////////////////////////////
 void Servo1CallBack( const std_msgs::Int16& servo_msg) {
 //////////////////////////////////////////////////////////////////////////
-	sprintf(debug_str, "servo1 %d", servo_msg.data);
-	msg_debug.data = debug_str;
-	debug_pub.publish( &msg_debug );
+	PRINTDEBUG_INT("servo1 %d", servo_msg.data);
+//	sprintf(debug_str, "servo1 %d", servo_msg.data);
+//	msg_debug.data = debug_str;
+//	debug_pub.publish( &msg_debug );
 
 	servo1.write( constrain( servo_msg.data, 0, 179) );
 }
 //////////////////////////////////////////////////////////////////////////
 void Servo2CallBack( const std_msgs::Int16& servo_msg) {
 //////////////////////////////////////////////////////////////////////////
-	sprintf(debug_str, "servo2 %d", servo_msg.data);
-	msg_debug.data = debug_str;
-	debug_pub.publish( &msg_debug );
+	PRINTDEBUG_INT(debug_str, "servo2 %d", servo_msg.data);
+//	sprintf(debug_str, "servo2 %d", servo_msg.data);
+//	msg_debug.data = debug_str;
+//	debug_pub.publish( &msg_debug );
 
 	servo2.write( constrain( servo_msg.data, 0, 179) );
 }
 ////////////////////////////////////////////////////////////////////////
 void Servo3CallBack( const std_msgs::Int16& servo_msg) {
 ////////////////////////////////////////////////////////////////////////
-	sprintf(debug_str, "servo3 %d", servo_msg.data);
-	msg_debug.data = debug_str;
-	debug_pub.publish( &msg_debug );
+	PRINTDEBUG_INT("servo3 %d", servo_msg.data);
+//	sprintf(debug_str, "servo3 %d", servo_msg.data);
+//	msg_debug.data = debug_str;
+//	debug_pub.publish( &msg_debug );
 
 	servo3.write( constrain( servo_msg.data, 0, 179) );
 }
 ////////////////////////////////////////////////////////////////////////
 void Servo4CallBack( const std_msgs::Int16& servo_msg) {
 ////////////////////////////////////////////////////////////////////////
-	sprintf(debug_str, "servo4 %d", servo_msg.data);
-	msg_debug.data = debug_str;
-	debug_pub.publish( &msg_debug );
+	PRINTDEBUG_INT("servo4 %d", servo_msg.data);
+//	sprintf(debug_str, "servo4 %d", servo_msg.data);
+//	msg_debug.data = debug_str;
+//	debug_pub.publish( &msg_debug );
 
 	servo4.write( constrain( servo_msg.data, 0, 179) );
 }
 ////////////////////////////////////////////////////////////////////////
 void Servo5CallBack( const std_msgs::Int16& servo_msg) {
 ////////////////////////////////////////////////////////////////////////
-	sprintf(debug_str, "servo5 %d", servo_msg.data);
-	msg_debug.data = debug_str;
-	debug_pub.publish( &msg_debug );
+	PRINTDEBUG_INT("servo5 %d", servo_msg.data);
+//	sprintf(debug_str, "servo5 %d", servo_msg.data);
+//	msg_debug.data = debug_str;
+//	debug_pub.publish( &msg_debug );
 
 	servo5.write( constrain( servo_msg.data, 0, 179) );
 }
@@ -392,8 +421,11 @@ void setup()
 	nh.advertise(debug_pub);
 	nh.advertise(lwheel_pub);
 	nh.advertise(rwheel_pub);
-	nh.advertise(range_pub);
+	nh.advertise(range0_pub);
+	nh.advertise(range1_pub);
+	nh.advertise(range2_pub);
 	nh.advertise(scope_pub);
+	nh.advertise(bat_pub);
 	nh.subscribe(rmotor_sub);
 	nh.subscribe(lmotor_sub);
 
@@ -431,13 +463,16 @@ void setup()
 	  // H   H   L    brake`
 
 
-	  pinMode( RANGE, INPUT );
+	  pinMode( RANGE0, INPUT );
+	  pinMode( RANGE1, INPUT );
+	  pinMode( RANGE2, INPUT );
 
 	  pinMode(LWHEEL_B, INPUT);
 	  pinMode(RWHEEL_B, INPUT);
 
 	  attachInterrupt(LWHEEL_A_INT, doLEncoder, RISING);   //init the interrupt mode
 	  attachInterrupt(RWHEEL_A_INT, doREncoder, RISING);
+	  ticks_since_msg = 20;
 
 }
 
@@ -450,6 +485,7 @@ void loop()
 {
 	nh.spinOnce();
 	ticks_since_beat++;
+	ticks_since_msg++;
 
 	if(ticks_since_beat > (1000 / LOOP_DLY) ) {
     	tick_no++;
@@ -457,6 +493,11 @@ void loop()
     	msg_debug.data = debug_str;
     	debug_pub.publish( &msg_debug );
     	ticks_since_beat = 0;
+	}
+	if (ticks_since_msg > (1000 / LOOP_DLY)) {
+		lbrake();
+		rbrake();
+		ticks_since_msg = (1000 / LOOP_DLY) + 1; // to prevent wrap-around
 	}
 
 	// try without interrupts
@@ -471,12 +512,18 @@ void loop()
 //    }
 	msg_lwheel.data = lcoder;
 	msg_rwheel.data = rcoder;
-	msg_range.data = analogRead( RANGE );
+	msg_range0.data = analogRead( RANGE0 );
+	msg_range1.data = analogRead( RANGE1 );
+	msg_range2.data = analogRead( RANGE2 );
 	msg_scope.data = analogRead( SCOPE );
+	msg_bat.data = analogRead( BAT );
 	lwheel_pub.publish( &msg_lwheel );
 	rwheel_pub.publish( &msg_rwheel );
-	range_pub.publish( &msg_range );
+	range0_pub.publish( &msg_range0 );
+	range1_pub.publish( &msg_range1 );
+	range2_pub.publish( &msg_range2 );
 	scope_pub.publish( &msg_scope );
+	bat_pub.publish( &msg_bat );
 
 
 	nh.spinOnce();
